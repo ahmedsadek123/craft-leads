@@ -1,0 +1,54 @@
+{
+  "leads": [
+    {
+      "id": "f20e493f-e496-42f6-a5d2-7fad5443448f",
+      "name": "Steve Floral Shop Asokwa",
+      "phone": "+23353477716",
+      "type": "متجر زهور",
+      "address": "STEVE FLORAL SHOP, 309 Prempeh DC Rd, Kumasi, غانا",
+      "mapsUrl": "https://www.google.com/maps/place/Steve+Floral+Shop+Asokwa/data=!4m7!3m6!1s0xfdb97b743698659:0xe55ad2862f285dd9!8m2!3d6.6760363!4d-1.5992621!16s%2Fg%2F11j6w64ncw!19sChIJWYZpQ7eX2w8R2V0oL4bSWuU?authuser=0&hl=ar&rclk=1",
+      "status": "pending",
+      "addedAt": "2026-06-06T17:03:03.267Z"
+    },
+    {
+      "id": "8fd34d80-7104-4565-b13d-4750da40f919",
+      "name": "Adore Floral & Gift Shop",
+      "phone": "+23355563499",
+      "type": "متجر زهور",
+      "address": "Melcom Road, Kumasi, غانا",
+      "mapsUrl": "https://www.google.com/maps/place/Adore+Floral+%26+Gift+Shop/data=!4m7!3m6!1s0xfdb9140569eb38f:0x7320d92dfdba211c!8m2!3d6.6531062!4d-1.6182642!16s%2Fg%2F11x5kq2qcl!19sChIJj7OeVkCR2w8RHCG6_S3ZIHM?authuser=0&hl=ar&rclk=1",
+      "status": "pending",
+      "addedAt": "2026-06-06T17:03:03.267Z"
+    },
+    {
+      "id": "5305ae5c-0411-498f-be9a-faf108f91674",
+      "name": "Mizfaah_florals",
+      "phone": "+23327534803",
+      "type": "متجر زهور",
+      "address": "Siloam Hospital Rd, Kumasi, غانا",
+      "mapsUrl": "https://www.google.com/maps/place/Mizfaah_florals/data=!4m7!3m6!1s0xfdb9711debcb6db:0x8c700ee865fd0165!8m2!3d6.7000863!4d-1.6608128!16s%2Fg%2F11q83gtw96!19sChIJ27a83hGX2w8RZQH9ZegOcIw?authuser=0&hl=ar&rclk=1",
+      "status": "pending",
+      "addedAt": "2026-06-06T17:03:03.267Z"
+    },
+    {
+      "id": "7098aeb7-7435-4650-aea0-81e387828583",
+      "name": "Floralife Garden Center",
+      "phone": "+23355834220",
+      "type": "متجر زهور",
+      "address": "Adjacent the Ark, Kumasi, غانا",
+      "mapsUrl": "https://www.google.com/maps/place/Floralife+Garden+Center/data=!4m7!3m6!1s0xfdb9575d8d865d3:0x89a41fdd846a2a0!8m2!3d6.667934!4d-1.6090707!16s%2Fg%2F11tfyn8g9j!19sChIJ02XY2HWV2w8RoKJG2P1Bmgg?authuser=0&hl=ar&rclk=1",
+      "status": "pending",
+      "addedAt": "2026-06-06T17:03:03.267Z"
+    },
+    {
+      "id": "db1d2e8f-97f6-4375-87cc-3ba137e30ebd",
+      "name": "Pretty Bows Gift Haven",
+      "phone": "+23320123828",
+      "type": "محل هدايا",
+      "address": "AF-0036-3588, Kumasi, غانا",
+      "mapsUrl": "https://www.google.com/maps/place/Pretty+Bows+Gift+Haven/data=!4m7!3m6!1s0xfdb973b27bc7017:0x2e98a2feac23337a!8m2!3d6.6700929!4d-1.6018955!16s%2Fg%2F11sfqvkrkj!19sChIJF3C8JzuX2w8RejMjrP6imC4?authuser=0&hl=ar&rclk=1",
+      "status": "pending",
+      "addedAt": "2026-06-06T17:03:03.267Z"
+    }
+  ]
+}
