@@ -28,6 +28,10 @@ function initWhatsApp() {
 
   client = new Client({
     authStrategy: new LocalAuth({ dataPath: './data/whatsapp-session' }),
+    webVersionCache: {
+      type: 'local',
+      path: './data/wwebjs_cache',
+    },
     puppeteer: {
       headless: true,
       args: [
