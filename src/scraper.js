@@ -97,9 +97,14 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
         const name = (await placePage.locator('h1.DUwDvf, h1').first().textContent({ timeout: 5000 }).catch(() => '')).trim();
         if (!name || name.length < 2) continue;
 
-        // Skip if they already have a website
-        const hasWebsite = await placePage.locator('a[data-item-id="authority"]').isVisible({ timeout: 2000 }).catch(() => false);
-        if (hasWebsite) continue;
+        // Skip only if they have a REAL website (not just Facebook/Instagram)
+        const websiteEl = placePage.locator('a[data-item-id="authority"]');
+        const websiteVisible = await websiteEl.isVisible({ timeout: 2000 }).catch(() => false);
+        if (websiteVisible) {
+          const href = (await websiteEl.getAttribute('href', { timeout: 1000 }).catch(() => '')) || '';
+          const isSocial = /facebook\.com|instagram\.com|fb\.com/i.test(href);
+          if (!isSocial) continue; // has a real website — skip
+        }
 
         // Phone
         const phoneEl = placePage.locator('[data-item-id*="phone"]').first();
