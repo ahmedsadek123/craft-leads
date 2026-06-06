@@ -144,16 +144,15 @@ async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageT
     if (result.success) {
       sent++;
       onProgress?.({ type: 'sent', name: lead.name, phone: lead.phone });
+      // Only delay after a successful send (skip delay for failed/not-on-WA leads)
+      if (i < targets.length - 1) {
+        const waitSec = Math.round(Math.random() * (maxDelaySec - minDelaySec) + minDelaySec);
+        onProgress?.({ type: 'waiting', seconds: waitSec });
+        await delay(minDelaySec, maxDelaySec);
+      }
     } else {
       failed++;
       onProgress?.({ type: 'failed', name: lead.name, reason: result.reason });
-    }
-
-    // Don't delay after last message
-    if (i < targets.length - 1) {
-      const waitSec = Math.round(Math.random() * (maxDelaySec - minDelaySec) + minDelaySec);
-      onProgress?.({ type: 'waiting', seconds: waitSec });
-      await delay(minDelaySec, maxDelaySec);
     }
   }
 
