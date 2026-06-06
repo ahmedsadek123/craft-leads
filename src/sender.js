@@ -30,7 +30,7 @@ function initWhatsApp() {
     authStrategy: new LocalAuth({ dataPath: './data/whatsapp-session' }),
     webVersionCache: {
       type: 'local',
-      path: './data/wwebjs_cache',
+      path: './.wwebjs_cache',
     },
     puppeteer: {
       headless: true,
