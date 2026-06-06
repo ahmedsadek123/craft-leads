@@ -7,6 +7,14 @@ const { scrapeGoogleMaps } = require('./src/scraper');
 const { initWhatsApp, disconnectWhatsApp, sendBatch, getStatus, onStatusChange } = require('./src/sender');
 const db = require('./src/db');
 
+// Prevent unhandled errors from crashing the server
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (server kept alive):', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection (server kept alive):', reason);
+});
+
 const app = express();
 app.use(cors());
 app.use(express.json());

@@ -5,7 +5,21 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
   const query = `${category} in ${city}`;
   const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',   // use /tmp instead of /dev/shm (critical on Railway)
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-plugins',
+      '--disable-images',           // skip loading images — huge memory saving
+      '--blink-settings=imagesEnabled=false',
+      '--single-process',           // run renderer in browser process — saves ~150MB
+      '--no-zygote',
+    ],
+  });
   // en-US locale so Google Maps UI and selectors are consistent globally
   const context = await browser.newContext({ locale: 'en-US' });
   const leads = [];
