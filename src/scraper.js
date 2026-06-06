@@ -1,11 +1,13 @@
 const { chromium } = require('playwright');
 
 async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress) {
-  const query = `${category} في ${city}`;
+  // Universal connector — works on Google Maps regardless of locale
+  const query = `${category} in ${city}`;
   const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ locale: 'ar-EG' });
+  // en-US locale so Google Maps UI and selectors are consistent globally
+  const context = await browser.newContext({ locale: 'en-US' });
   const leads = [];
   const seenPhones = new Set();
 
@@ -16,8 +18,8 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     const searchPage = await context.newPage();
     await searchPage.goto(searchUrl, { waitUntil: 'load', timeout: 60000 });
 
-    // Accept consent if shown
-    for (const txt of ['Accept all', 'قبول الكل', 'Agree']) {
+    // Accept consent if shown (handles Arabic, English, EU dialogs)
+    for (const txt of ['Accept all', 'قبول الكل', 'Agree', 'I agree']) {
       const btn = searchPage.getByRole('button', { name: txt, exact: false });
       if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await btn.click();
@@ -33,7 +35,6 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     const maxScrolls = Math.ceil(maxResults / 5) + 8;
 
     while (placeUrls.size < maxResults && scrollRounds < maxScrolls) {
-      // Extract all place hrefs currently visible
       const newUrls = await searchPage.evaluate(() => {
         const anchors = document.querySelectorAll('.Nv2PK a[href*="/maps/place/"]');
         return [...anchors].map(a => a.href);
@@ -42,7 +43,6 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
 
       onProgress?.({ type: 'status', message: `جمع الروابط: ${placeUrls.size}` });
 
-      // Scroll feed to load more
       const scrolled = await searchPage.evaluate(() => {
         const feed = document.querySelector('[role="feed"]');
         if (!feed) return false;
@@ -55,13 +55,18 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
       await searchPage.waitForTimeout(2000);
       scrollRounds++;
 
-      const ended = await searchPage.locator('text=لقد وصلت إلى نهاية القائمة').isVisible({ timeout: 500 }).catch(() => false);
+      // Check end of list in both English and Arabic
+      const ended = await searchPage.evaluate(() => {
+        const t = document.body.innerText;
+        return t.includes("You've reached the end of the list") ||
+               t.includes('لقد وصلت إلى نهاية القائمة');
+      });
       if (ended) break;
     }
 
     await searchPage.close();
 
-    const urlList = [...placeUrls].slice(0, maxResults * 2); // collect extra — many will have websites
+    const urlList = [...placeUrls].slice(0, maxResults * 2);
     onProgress?.({ type: 'status', message: `بدأ فحص ${urlList.length} مكان...` });
 
     // ── Step 2: Visit each place and extract data ─────────────
@@ -74,11 +79,11 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
         await placePage.goto(url, { waitUntil: 'load', timeout: 60000 });
         await placePage.waitForTimeout(1500);
 
-        // Business name — on direct place URL, h1.DUwDvf has the name
+        // Business name
         const name = (await placePage.locator('h1.DUwDvf, h1').first().textContent({ timeout: 5000 }).catch(() => '')).trim();
         if (!name || name.length < 2) continue;
 
-        // Website check — skip if they already have one
+        // Skip if they already have a website
         const hasWebsite = await placePage.locator('a[data-item-id="authority"]').isVisible({ timeout: 2000 }).catch(() => false);
         if (hasWebsite) continue;
 
@@ -88,27 +93,26 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
           || await phoneEl.textContent({ timeout: 3000 }).catch(() => null);
 
         if (!phoneLabel) continue;
-        const digits = phoneLabel.replace(/\s/g, '').match(/(\d{10,11})/);
-        if (!digits) continue;
 
-        let phone = digits[1];
-        if (phone.startsWith('0') && phone.length === 11) phone = '20' + phone.slice(1);
-        if (!phone.startsWith('+')) phone = '+' + phone;
-        if (phone.length < 12) continue;
+        // Extract digits + keep leading + for international format
+        const digitsRaw = phoneLabel.replace(/[^\d+]/g, '');
+        const digitOnly = digitsRaw.replace('+', '');
+        if (digitOnly.length < 7) continue; // too short to be real
+
+        const phone = digitsRaw.startsWith('+') ? digitsRaw : '+' + digitsRaw;
         if (seenPhones.has(phone)) continue;
 
         // Category
         const typeEl = placePage.locator('button.DkEaL, [jsaction*="category"]').first();
         const type = (await typeEl.textContent({ timeout: 2000 }).catch(() => category)).trim() || category;
 
-        // Address
+        // Address — handles both Arabic ("العنوان:") and English ("Address:") prefixes
         const addrEl = placePage.locator('[data-item-id="address"]').first();
         const addrLabel = await addrEl.getAttribute('aria-label', { timeout: 2000 }).catch(() => '');
-        const address = addrLabel.replace(/^العنوان:\s*/i, '').trim();
+        const address = addrLabel.replace(/^(العنوان|Address):\s*/i, '').trim();
 
         seenPhones.add(phone);
-        const lead = { name, phone, type, address, mapsUrl: url };
-        leads.push(lead);
+        leads.push({ name, phone, type, address, mapsUrl: url });
         onProgress?.({ type: 'lead', message: `✅ ${name} | ${phone}`, count: leads.length });
 
       } catch (_) {
