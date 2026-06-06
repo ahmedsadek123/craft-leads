@@ -83,13 +83,9 @@ app.post('/api/scrape', async (req, res) => {
 });
 
 // ── WhatsApp ──────────────────────────────────────────────────
-app.post('/api/whatsapp/connect', async (req, res) => {
-  try {
-    await initWhatsApp();
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.post('/api/whatsapp/connect', (req, res) => {
+  initWhatsApp();
+  res.json({ ok: true, message: 'جاري التشغيل — انتظر الـ QR' });
 });
 
 app.post('/api/whatsapp/disconnect', async (req, res) => {

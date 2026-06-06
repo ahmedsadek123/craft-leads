@@ -103,7 +103,8 @@
 
       <div id="wa-qr-section" class="hidden text-center mb-4">
         <p class="text-amber-400 text-sm mb-3">امسح الـ QR بواتساب بتاعك</p>
-        <img id="qr-img" src="" alt="QR Code" class="mx-auto rounded-xl" style="width:200px;height:200px;background:#fff;">
+        <img id="qr-img" src="" alt="QR Code" class="mx-auto rounded-xl" style="width:200px;height:200px;background:#fff;"
+          onerror="this._r=(this._r||0)+1; if(this._r<8) setTimeout(()=>{this.src='/api/whatsapp/qr-image?t='+Date.now();},2000);">
         <p class="text-slate-500 text-xs mt-2">واتساب ← المزيد ← الأجهزة المرتبطة ← ربط جهاز</p>
       </div>
 
@@ -358,7 +359,7 @@ function startQRPolling() {
     if (status === 'qr' && qr) {
       document.getElementById('qr-img').src = '/api/whatsapp/qr-image?t=' + Date.now();
       document.getElementById('wa-qr-section').classList.remove('hidden');
-      document.getElementById('wa-spinner').classList.add('hidden');
+      setWaStatus('qr');
     } else if (status === 'ready') {
       stopQRPolling();
       setWaStatus('ready');
@@ -524,8 +525,15 @@ async function init() {
 
   // Check existing WA status
   const res = await fetch('/api/whatsapp/status');
-  const { status } = await res.json();
+  const { status, qr } = await res.json();
   setWaStatus(status || 'disconnected');
+  // If server already has a QR (e.g. after page refresh), show it immediately
+  if (status === 'qr') {
+    showQR(qr);
+    startQRPolling();
+  } else if (status === 'connecting' || status === 'authenticated') {
+    startQRPolling(); // Resume polling in case QR hasn't fired yet
+  }
 }
 
 init();

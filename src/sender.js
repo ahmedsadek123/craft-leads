@@ -20,7 +20,7 @@ function getStatus() {
   return { status: clientStatus, qr: clientStatus === 'qr' ? qrData : null };
 }
 
-async function initWhatsApp() {
+function initWhatsApp() {
   if (client) return;
 
   clientStatus = 'connecting';
@@ -28,10 +28,6 @@ async function initWhatsApp() {
 
   client = new Client({
     authStrategy: new LocalAuth({ dataPath: './data/whatsapp-session' }),
-    webVersionCache: {
-      type: 'remote',
-      remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-    },
     puppeteer: {
       headless: true,
       args: [
@@ -77,7 +73,13 @@ async function initWhatsApp() {
     emit({ type: 'status', status: 'error', message: 'فشل التوثيق — امسح الـ QR تاني' });
   });
 
-  await client.initialize();
+  // Fire and forget — don't await, SSE handles all status updates
+  client.initialize().catch(err => {
+    console.error('WA init error:', err.message);
+    clientStatus = 'error';
+    client = null;
+    emit({ type: 'status', status: 'error', message: err.message });
+  });
 }
 
 async function disconnectWhatsApp() {
@@ -106,18 +108,13 @@ async function sendToLead(lead, messageTemplate) {
   const phone = lead.phone.replace(/^\+/, '') + '@c.us';
 
   try {
-    // Check if number exists on WhatsApp
-    const isRegistered = await client.isRegisteredUser(phone);
-    if (!isRegistered) {
-      db.updateStatus(lead.id, 'not_on_whatsapp');
-      return { success: false, reason: 'مش على واتساب' };
-    }
-
     await client.sendMessage(phone, message);
     db.updateStatus(lead.id, 'sent');
     return { success: true, message };
   } catch (err) {
-    db.updateStatus(lead.id, 'failed');
+    // Mark as not_on_whatsapp if WA rejects the number, otherwise failed
+    const notOnWA = err.message?.includes('not a user') || err.message?.includes('invalid wid');
+    db.updateStatus(lead.id, notOnWA ? 'not_on_whatsapp' : 'failed');
     return { success: false, reason: err.message };
   }
 }
