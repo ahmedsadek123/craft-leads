@@ -112,7 +112,11 @@ async function sendToLead(lead, messageTemplate) {
   const phone = lead.phone.replace(/^\+/, '') + '@c.us';
 
   try {
-    await client.sendMessage(phone, message);
+    // Race against 30s timeout — prevents the loop from hanging forever
+    await Promise.race([
+      client.sendMessage(phone, message),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout بعد 30 ثانية')), 30000)),
+    ]);
     db.updateStatus(lead.id, 'sent');
     return { success: true, message };
   } catch (err) {
