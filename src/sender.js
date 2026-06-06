@@ -101,18 +101,16 @@ function delay(minSec, maxSec) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Send to one lead
+// Send to one lead — always returns {success, reason}, never throws
 async function sendToLead(lead, messageTemplate) {
   if (!client || clientStatus !== 'ready') {
-    throw new Error('WhatsApp مش متوصل');
+    return { success: false, reason: 'WhatsApp غير متصل' };
   }
 
   const message = messageTemplate || generateMessage(lead.name, lead.type);
-  // Format phone: must be international without +, followed by @c.us
   const phone = lead.phone.replace(/^\+/, '') + '@c.us';
 
   try {
-    // Race against 30s timeout — prevents the loop from hanging forever
     await Promise.race([
       client.sendMessage(phone, message),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout بعد 30 ثانية')), 30000)),
@@ -120,7 +118,6 @@ async function sendToLead(lead, messageTemplate) {
     db.updateStatus(lead.id, 'sent');
     return { success: true, message };
   } catch (err) {
-    // Mark as not_on_whatsapp if WA rejects the number, otherwise failed
     const notOnWA = err.message?.includes('not a user') || err.message?.includes('invalid wid');
     db.updateStatus(lead.id, notOnWA ? 'not_on_whatsapp' : 'failed');
     return { success: false, reason: err.message };
@@ -130,7 +127,9 @@ async function sendToLead(lead, messageTemplate) {
 // Send to multiple pending leads with rate limiting
 async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageTemplate }, onProgress) {
   if (!client || clientStatus !== 'ready') {
-    throw new Error('WhatsApp مش متوصل — وصّل الأول');
+    onProgress?.({ type: 'error', message: 'WhatsApp مش متوصل — وصّل الأول' });
+    onProgress?.({ type: 'done', sent: 0, failed: 0 });
+    return { sent: 0, failed: 0 };
   }
 
   const allLeads = db.getAll();
@@ -140,28 +139,39 @@ async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageT
 
   let sent = 0, failed = 0;
 
-  for (let i = 0; i < targets.length; i++) {
-    const lead = targets[i];
-    onProgress?.({ type: 'sending', index: i + 1, total: targets.length, name: lead.name });
-
-    const result = await sendToLead(lead, messageTemplate);
-
-    if (result.success) {
-      sent++;
-      onProgress?.({ type: 'sent', name: lead.name, phone: lead.phone });
-      // Only delay after a successful send (skip delay for failed/not-on-WA leads)
-      if (i < targets.length - 1) {
-        const waitSec = Math.round(Math.random() * (maxDelaySec - minDelaySec) + minDelaySec);
-        onProgress?.({ type: 'waiting', seconds: waitSec });
-        await delay(minDelaySec, maxDelaySec);
+  try {
+    for (let i = 0; i < targets.length; i++) {
+      // Re-check connection before every message
+      if (!client || clientStatus !== 'ready') {
+        onProgress?.({ type: 'error', message: 'WhatsApp انقطع أثناء الإرسال' });
+        break;
       }
-    } else {
-      failed++;
-      onProgress?.({ type: 'failed', name: lead.name, reason: result.reason });
+
+      const lead = targets[i];
+      onProgress?.({ type: 'sending', index: i + 1, total: targets.length, name: lead.name });
+
+      const result = await sendToLead(lead, messageTemplate);
+
+      if (result.success) {
+        sent++;
+        onProgress?.({ type: 'sent', name: lead.name, phone: lead.phone });
+        if (i < targets.length - 1) {
+          const waitSec = Math.round(Math.random() * (maxDelaySec - minDelaySec) + minDelaySec);
+          onProgress?.({ type: 'waiting', seconds: waitSec });
+          await delay(minDelaySec, maxDelaySec);
+        }
+      } else {
+        failed++;
+        onProgress?.({ type: 'failed', name: lead.name, reason: result.reason });
+      }
     }
+  } catch (err) {
+    onProgress?.({ type: 'error', message: err.message });
+  } finally {
+    // Always fire done so the frontend button re-enables
+    onProgress?.({ type: 'done', sent, failed });
   }
 
-  onProgress?.({ type: 'done', sent, failed });
   return { sent, failed };
 }
 

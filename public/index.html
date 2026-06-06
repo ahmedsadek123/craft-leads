@@ -313,7 +313,7 @@ function handleSenderEvent(data) {
   if (data.type === 'failed')  log(`❌ فشل ${data.name}: ${data.reason}`, 'red');
   if (data.type === 'waiting') log(`⏳ انتظار ${data.seconds} ثانية...`, 'gray');
   if (data.type === 'done')    { log(`🏁 انتهى: ${data.sent} أُرسل، ${data.failed} فشل`, 'green'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 إرسال للكل المعلقين'; }
-  if (data.type === 'error')   log('❌ خطأ إرسال: ' + data.message, 'red');
+  if (data.type === 'error')   { log('❌ خطأ إرسال: ' + data.message, 'red'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 إرسال للكل المعلقين'; }
 }
 
 // ─── WA Status UI ─────────────────────────────────────────────
