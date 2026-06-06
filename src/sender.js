@@ -111,6 +111,17 @@ async function sendToLead(lead, messageTemplate) {
   const phone = lead.phone.replace(/^\+/, '') + '@c.us';
 
   try {
+    // Fast check — skip numbers not on WhatsApp (10s timeout)
+    const isRegistered = await Promise.race([
+      client.isRegisteredUser(phone),
+      new Promise(resolve => setTimeout(() => resolve(false), 10000)),
+    ]);
+    if (!isRegistered) {
+      db.updateStatus(lead.id, 'not_on_whatsapp');
+      return { success: false, reason: 'مش على واتساب' };
+    }
+
+    // Send with 30s timeout
     await Promise.race([
       client.sendMessage(phone, message),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout بعد 30 ثانية')), 30000)),
