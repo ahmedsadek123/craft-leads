@@ -1,7 +1,8 @@
 FROM node:20-bookworm
 
-# Install system dependencies for both Playwright and Puppeteer Chrome
+# Install system Chromium + all required libs for Puppeteer & Playwright
 RUN apt-get update && apt-get install -y \
+    chromium \
     fonts-liberation \
     fonts-noto \
     ca-certificates \
@@ -26,16 +27,18 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
+# Skip puppeteer bundled Chrome download — use system /usr/bin/chromium instead
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV=production
 
 WORKDIR /app
 
 COPY package*.json ./
 
-# Let puppeteer download its own Chrome (more compatible with whatsapp-web.js)
-# Let Playwright download its own Chromium (scraper)
 RUN npm ci --omit=dev
-RUN npx playwright install chromium
+# Install Playwright Chromium for the scraper
+RUN npx playwright install chromium --with-deps
 
 COPY . .
 
