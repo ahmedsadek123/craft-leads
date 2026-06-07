@@ -1,4 +1,6 @@
-const { Client, LocalAuth, NoAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, RemoteAuth } = require('whatsapp-web.js');
+const { MongoStore } = require('wwebjs-mongo');
+const mongoose = require('mongoose');
 const qrcode = require('qrcode-terminal');
 const { generateMessage } = require('./templates');
 const db = require('./db');
@@ -20,14 +22,33 @@ function getStatus() {
   return { status: clientStatus, qr: clientStatus === 'qr' ? qrData : null };
 }
 
-function initWhatsApp() {
+async function buildAuthStrategy() {
+  if (process.env.MONGODB_URI) {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI);
+    }
+    const store = new MongoStore({ mongoose });
+    return new RemoteAuth({ store, backupSyncIntervalMs: 300000 });
+  }
+  return new LocalAuth({ dataPath: './data/whatsapp-session' });
+}
+
+async function initWhatsApp() {
   if (client) return;
 
   clientStatus = 'connecting';
   emit({ type: 'status', status: 'connecting' });
 
+  let authStrategy;
+  try {
+    authStrategy = await buildAuthStrategy();
+  } catch (err) {
+    console.error('Auth strategy error, falling back to LocalAuth:', err.message);
+    authStrategy = new LocalAuth({ dataPath: './data/whatsapp-session' });
+  }
+
   client = new Client({
-    authStrategy: new LocalAuth({ dataPath: './data/whatsapp-session' }),
+    authStrategy,
     webVersionCache: {
       type: 'local',
       path: './.wwebjs_cache',
