@@ -6,6 +6,7 @@ const { generateMessage } = require('./templates');
 const db = require('./db');
 
 let client = null;
+let initializing = false; // guard against race condition
 let clientStatus = 'disconnected'; // disconnected | qr | ready | error
 let qrData = null;
 let statusListeners = [];
@@ -34,7 +35,8 @@ async function buildAuthStrategy() {
 }
 
 async function initWhatsApp() {
-  if (client) return;
+  if (client || initializing) return;
+  initializing = true;
 
   clientStatus = 'connecting';
   emit({ type: 'status', status: 'connecting' });
@@ -47,6 +49,9 @@ async function initWhatsApp() {
     authStrategy = new LocalAuth({ dataPath: './data/whatsapp-session' });
   }
 
+
+
+  initializing = false;
   client = new Client({
     authStrategy,
     webVersionCache: {
@@ -95,12 +100,14 @@ async function initWhatsApp() {
   client.on('disconnected', () => {
     clientStatus = 'disconnected';
     client = null;
+    initializing = false;
     emit({ type: 'status', status: 'disconnected' });
   });
 
   client.on('auth_failure', () => {
     clientStatus = 'error';
     client = null;
+    initializing = false;
     emit({ type: 'status', status: 'error', message: 'فشل التوثيق — امسح الـ QR تاني' });
   });
 
@@ -109,6 +116,7 @@ async function initWhatsApp() {
     console.error('WA init error:', err.message);
     clientStatus = 'error';
     client = null;
+    initializing = false;
     emit({ type: 'status', status: 'error', message: err.message });
   });
 }
