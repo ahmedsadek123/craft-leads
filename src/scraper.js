@@ -28,7 +28,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
   const seenPhones = new Set();
 
   try {
-    onProgress?.({ type: 'status', message: `جاري البحث: ${query}` });
+    onProgress?.({ type: 'status', message: `Searching: ${query}` });
 
     // ── Step 1: Collect all place URLs from search results ────
     const searchPage = await context.newPage();
@@ -36,7 +36,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     await searchPage.waitForTimeout(2000);
 
     // Accept consent if shown (handles Arabic, English, EU dialogs)
-    for (const txt of ['Accept all', 'قبول الكل', 'Agree', 'I agree']) {
+    for (const txt of ['Accept all', 'قبول الكل', 'Agree', 'I agree', 'موافقة']) {
       const btn = searchPage.getByRole('button', { name: txt, exact: false });
       if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await btn.click();
@@ -58,7 +58,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
       });
       newUrls.forEach(u => placeUrls.add(u));
 
-      onProgress?.({ type: 'status', message: `جمع الروابط: ${placeUrls.size}` });
+      onProgress?.({ type: 'status', message: `Collecting links: ${placeUrls.size}` });
 
       const scrolled = await searchPage.evaluate(() => {
         const feed = document.querySelector('[role="feed"]');
@@ -76,7 +76,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
       const ended = await searchPage.evaluate(() => {
         const t = document.body.innerText;
         return t.includes("You've reached the end of the list") ||
-               t.includes('لقد وصلت إلى نهاية القائمة');
+               t.includes('لقد وصلت إلى نهاية القائمة'); // Arabic end-of-list text
       });
       if (ended) break;
     }
@@ -84,7 +84,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     await searchPage.close();
 
     const urlList = [...placeUrls].slice(0, maxResults * 2);
-    onProgress?.({ type: 'status', message: `بدأ فحص ${urlList.length} مكان...` });
+    onProgress?.({ type: 'status', message: `Checking ${urlList.length} places...` });
 
     // ── Step 2: Visit each place and extract data ─────────────
     const placePage = await context.newPage();
@@ -149,7 +149,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
           }).catch(() => null);
         }
 
-        if (!phoneLabel) { skippedNoPhone++; onProgress?.({ type: 'status', message: `⚠️ ${name} - لا يوجد هاتف` }); continue; }
+        if (!phoneLabel) { skippedNoPhone++; onProgress?.({ type: 'status', message: `⚠️ ${name} — no phone` }); continue; }
 
         // Extract digits + keep leading + for international format
         const digitsRaw = (phoneLabel + '').replace(/[^\d+]/g, '');
@@ -174,11 +174,11 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
         onProgress?.({ type: 'lead', message: `✅ ${name} | ${phone}`, count: leads.length });
 
       } catch (err) {
-        onProgress?.({ type: 'status', message: `⚠️ خطأ: ${err.message?.slice(0, 60)}` });
+        onProgress?.({ type: 'status', message: `⚠️ Error: ${err.message?.slice(0, 60)}` });
       }
     }
 
-    onProgress?.({ type: 'status', message: `ملخص: ${leads.length} عميل ✅ | ${skippedWebsite} لديهم موقع | ${skippedNoPhone} بدون هاتف | ${skippedNoName} بدون اسم` });
+    onProgress?.({ type: 'status', message: `Summary: ${leads.length} found ✅ | ${skippedWebsite} have website | ${skippedNoPhone} no phone | ${skippedNoName} no name` });
 
     await placePage.close();
 
@@ -186,7 +186,7 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     await browser.close();
   }
 
-  onProgress?.({ type: 'done', message: `اكتمل: ${leads.length} عميل بدون موقع`, count: leads.length });
+  onProgress?.({ type: 'done', message: `Done: ${leads.length} leads without a website`, count: leads.length });
   return leads;
 }
 

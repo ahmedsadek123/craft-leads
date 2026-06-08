@@ -95,7 +95,7 @@ async function initWhatsApp() {
     clientStatus = 'ready';
     qrData = null;
     emit({ type: 'status', status: 'ready' });
-    console.log('✅ WhatsApp جاهز للإرسال');
+    console.log('✅ WhatsApp ready to send');
   });
 
   client.on('disconnected', () => {
@@ -109,7 +109,7 @@ async function initWhatsApp() {
     clientStatus = 'error';
     client = null;
     initializing = false;
-    emit({ type: 'status', status: 'error', message: 'فشل التوثيق — امسح الـ QR تاني' });
+    emit({ type: 'status', status: 'error', message: 'Auth failed — scan QR again' });
   });
 
   // Fire and forget — don't await, SSE handles all status updates
@@ -140,7 +140,7 @@ function delay(minSec, maxSec) {
 // Send to one lead — always returns {success, reason}, never throws
 async function sendToLead(lead, messageTemplate) {
   if (!client || clientStatus !== 'ready') {
-    return { success: false, reason: 'WhatsApp غير متصل' };
+    return { success: false, reason: 'WhatsApp not connected' };
   }
 
   const message = messageTemplate || generateMessage(lead.name, lead.type);
@@ -154,13 +154,13 @@ async function sendToLead(lead, messageTemplate) {
     ]);
     if (!isRegistered) {
       db.updateStatus(lead.id, 'not_on_whatsapp');
-      return { success: false, reason: 'مش على واتساب' };
+      return { success: false, reason: 'Not on WhatsApp' };
     }
 
     // Send with 30s timeout
     await Promise.race([
       client.sendMessage(phone, message),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout بعد 30 ثانية')), 30000)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('send timeout after 30s')), 30000)),
     ]);
     db.updateStatus(lead.id, 'sent');
     return { success: true, message };
@@ -174,7 +174,7 @@ async function sendToLead(lead, messageTemplate) {
 // Send to multiple pending leads with rate limiting
 async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageTemplate }, onProgress) {
   if (!client || clientStatus !== 'ready') {
-    onProgress?.({ type: 'error', message: 'WhatsApp مش متوصل — وصّل الأول' });
+    onProgress?.({ type: 'error', message: 'WhatsApp not connected — connect first' });
     onProgress?.({ type: 'done', sent: 0, failed: 0 });
     return { sent: 0, failed: 0 };
   }
@@ -190,7 +190,7 @@ async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageT
     for (let i = 0; i < targets.length; i++) {
       // Re-check connection before every message
       if (!client || clientStatus !== 'ready') {
-        onProgress?.({ type: 'error', message: 'WhatsApp انقطع أثناء الإرسال' });
+        onProgress?.({ type: 'error', message: 'WhatsApp disconnected during send' });
         break;
       }
 

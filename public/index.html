@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Craft Leads — لوحة التحكم</title>
+<title>Craft Leads — Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-  * { font-family: 'Cairo', sans-serif; }
-  body { background: #0d0f14; color: #e2e8f0; }
+  body { background: #0d0f14; color: #e2e8f0; font-family: system-ui, sans-serif; }
 
   .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); }
   .stat-card { background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.1); }
@@ -29,11 +27,6 @@
   .log-entry { animation: fadeIn 0.3s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-  .wa-ready  { color: #4ade80; }
-  .wa-qr     { color: #fbbf24; }
-  .wa-conn   { color: #60a5fa; }
-  .wa-error  { color: #f87171; }
-
   #qr-canvas { border-radius: 12px; }
   .spinner { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -53,14 +46,14 @@
 <!-- Header -->
 <header class="flex items-center justify-between mb-6">
   <div>
-    <h1 class="text-2xl font-extrabold bg-gradient-to-l from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+    <h1 class="text-2xl font-extrabold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
       Craft Leads
     </h1>
-    <p class="text-slate-500 text-sm mt-0.5">أداة جمع وإرسال العروض على واتساب</p>
+    <p class="text-slate-500 text-sm mt-0.5">WhatsApp outreach tool for Google Maps leads</p>
   </div>
   <div id="wa-status-badge" class="flex items-center gap-2 glass px-4 py-2 rounded-full text-sm">
     <span id="wa-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-    <span id="wa-label">غير متوصل</span>
+    <span id="wa-label">Disconnected</span>
   </div>
 </header>
 
@@ -68,23 +61,23 @@
 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6" id="stats-row">
   <div class="stat-card rounded-xl p-4 text-center">
     <div id="stat-total" class="text-3xl font-bold text-white">0</div>
-    <div class="text-xs text-slate-400 mt-1">إجمالي العملاء</div>
+    <div class="text-xs text-slate-400 mt-1">Total Leads</div>
   </div>
   <div class="stat-card rounded-xl p-4 text-center">
     <div id="stat-pending" class="text-3xl font-bold text-amber-400">0</div>
-    <div class="text-xs text-slate-400 mt-1">في الانتظار</div>
+    <div class="text-xs text-slate-400 mt-1">Pending</div>
   </div>
   <div class="stat-card rounded-xl p-4 text-center">
     <div id="stat-sent" class="text-3xl font-bold text-green-400">0</div>
-    <div class="text-xs text-slate-400 mt-1">تم الإرسال</div>
+    <div class="text-xs text-slate-400 mt-1">Sent</div>
   </div>
   <div class="stat-card rounded-xl p-4 text-center">
     <div id="stat-replied" class="text-3xl font-bold text-purple-400">0</div>
-    <div class="text-xs text-slate-400 mt-1">ردود</div>
+    <div class="text-xs text-slate-400 mt-1">Replied</div>
   </div>
   <div class="stat-card rounded-xl p-4 text-center">
     <div id="stat-failed" class="text-3xl font-bold text-red-400">0</div>
-    <div class="text-xs text-slate-400 mt-1">فشل</div>
+    <div class="text-xs text-slate-400 mt-1">Failed</div>
   </div>
 </div>
 
@@ -98,14 +91,14 @@
     <div class="glass rounded-2xl p-5">
       <h2 class="text-base font-bold mb-4 flex items-center gap-2">
         <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.103 1.51 5.835L.057 23.428a.5.5 0 00.611.611l5.593-1.453A11.937 11.937 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.031-1.385l-.36-.214-3.724.967.99-3.614-.235-.373A9.818 9.818 0 012.182 12C2.182 6.58 6.58 2.182 12 2.182c5.42 0 9.818 4.398 9.818 9.818 0 5.42-4.398 9.818-9.818 9.818z"/></svg>
-        واتساب
+        WhatsApp
       </h2>
 
       <div id="wa-qr-section" class="hidden text-center mb-4">
-        <p class="text-amber-400 text-sm mb-3">امسح الـ QR بواتساب بتاعك</p>
+        <p class="text-amber-400 text-sm mb-3">Scan the QR code with your WhatsApp</p>
         <img id="qr-img" src="" alt="QR Code" class="mx-auto rounded-xl" style="width:200px;height:200px;background:#fff;"
           onerror="this._r=(this._r||0)+1; if(this._r<8) setTimeout(()=>{this.src='/api/whatsapp/qr-image?t='+Date.now();},2000);">
-        <p class="text-slate-500 text-xs mt-2">واتساب ← المزيد ← الأجهزة المرتبطة ← ربط جهاز</p>
+        <p class="text-slate-500 text-xs mt-2">WhatsApp → More → Linked Devices → Link a Device</p>
       </div>
 
       <div id="wa-spinner" class="hidden text-center py-4">
@@ -113,17 +106,17 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
         </svg>
-        <p class="text-slate-400 text-sm mt-2">جاري الاتصال...</p>
+        <p class="text-slate-400 text-sm mt-2">Connecting...</p>
       </div>
 
       <div class="flex gap-2">
         <button onclick="connectWA()" id="btn-connect"
           class="flex-1 btn-green text-white text-sm font-semibold py-2.5 rounded-xl">
-          اتصال
+          Connect
         </button>
         <button onclick="disconnectWA()" id="btn-disconnect"
           class="flex-1 btn-red text-red-300 text-sm font-semibold py-2.5 rounded-xl hidden">
-          قطع
+          Disconnect
         </button>
       </div>
     </div>
@@ -134,32 +127,32 @@
         <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
-        جمع العملاء من Google Maps
+        Collect Leads from Google Maps
       </h2>
 
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">نوع البيزنس</label>
-          <input id="inp-category" type="text" placeholder="مثال: مطعم، صالون، عيادة..."
+          <label class="text-xs text-slate-400 block mb-1">Business Type</label>
+          <input id="inp-category" type="text" placeholder="e.g. restaurant, salon, clinic..."
             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-slate-600">
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">المدينة</label>
-          <input id="inp-city" type="text" placeholder="مثال: القاهرة، الإسكندرية، الجيزة..."
+          <label class="text-xs text-slate-400 block mb-1">City</label>
+          <input id="inp-city" type="text" placeholder="e.g. Cairo, Alexandria, Dubai..."
             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-slate-600">
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">الحد الأقصى للنتائج</label>
+          <label class="text-xs text-slate-400 block mb-1">Max Results</label>
           <select id="inp-max" class="w-full bg-[#1a1d27] border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white">
-            <option value="20">20 نتيجة</option>
-            <option value="50" selected>50 نتيجة</option>
-            <option value="100">100 نتيجة</option>
+            <option value="20">20 results</option>
+            <option value="50" selected>50 results</option>
+            <option value="100">100 results</option>
           </select>
         </div>
 
         <button onclick="startScrape()" id="btn-scrape"
           class="w-full btn-primary text-white text-sm font-semibold py-2.5 rounded-xl">
-          🔍 ابدأ الجمع
+          🔍 Start Collecting
         </button>
       </div>
     </div>
@@ -170,35 +163,35 @@
         <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
         </svg>
-        إرسال الرسائل
+        Send Messages
       </h2>
 
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">نص الرسالة</label>
+          <label class="text-xs text-slate-400 block mb-1">Message Text</label>
           <textarea id="inp-message" rows="4"
             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-slate-600 resize-y"
-          >السلام عليكم معاك ليث من Craftsite.it.com احنا بنعمل ويبسايت احترافيه وباسعار ااقل من السوق شوف شغلنا في المواقع بتاعنا ولو عجبك اتواصل معانا</textarea>
+          >Hi, I'm Layth from Craftsite.it.com — we build professional websites at prices lower than the market. Check out our work and get in touch if you're interested!</textarea>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">تأخير أدنى (ثانية)</label>
+            <label class="text-xs text-slate-400 block mb-1">Min Delay (sec)</label>
             <input id="inp-mindelay" type="number" value="35" min="20"
               class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white">
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">تأخير أقصى (ثانية)</label>
+            <label class="text-xs text-slate-400 block mb-1">Max Delay (sec)</label>
             <input id="inp-maxdelay" type="number" value="65" min="30"
               class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white">
           </div>
         </div>
 
-        <p class="text-xs text-slate-500">التأخير العشوائي بين الرسائل يحمي حسابك من الحظر</p>
+        <p class="text-xs text-slate-500">Random delay between messages protects your account from being banned</p>
 
         <button onclick="sendMessages()" id="btn-send"
           class="w-full btn-green text-white text-sm font-semibold py-2.5 rounded-xl">
-          📤 إرسال للكل المعلقين
+          📤 Send to All Pending
         </button>
       </div>
     </div>
@@ -211,17 +204,17 @@
     <!-- Leads Table -->
     <div class="glass rounded-2xl p-5">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-bold">قائمة العملاء</h2>
+        <h2 class="text-base font-bold">Leads</h2>
         <div class="flex items-center gap-2">
           <select id="filter-status" onchange="filterLeads()" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none">
-            <option value="">الكل</option>
-            <option value="pending">في الانتظار</option>
-            <option value="sent">تم الإرسال</option>
-            <option value="replied">ردود</option>
-            <option value="failed">فشل</option>
-            <option value="not_on_whatsapp">مش على WA</option>
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="sent">Sent</option>
+            <option value="replied">Replied</option>
+            <option value="failed">Failed</option>
+            <option value="not_on_whatsapp">Not on WA</option>
           </select>
-          <button onclick="clearLeads()" class="btn-red text-red-300 text-xs px-3 py-1.5 rounded-lg">مسح الكل</button>
+          <button onclick="clearLeads()" class="btn-red text-red-300 text-xs px-3 py-1.5 rounded-lg">Clear All</button>
         </div>
       </div>
 
@@ -229,17 +222,17 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-white/5">
-              <th class="text-right py-2 px-3">الاسم</th>
-              <th class="text-right py-2 px-3">النوع</th>
-              <th class="text-right py-2 px-3">الهاتف</th>
-              <th class="text-right py-2 px-3">الحالة</th>
-              <th class="text-right py-2 px-3">إجراء</th>
+              <th class="text-left py-2 px-3">Name</th>
+              <th class="text-left py-2 px-3">Type</th>
+              <th class="text-left py-2 px-3">Phone</th>
+              <th class="text-left py-2 px-3">Status</th>
+              <th class="text-left py-2 px-3">Action</th>
             </tr>
           </thead>
           <tbody id="leads-tbody">
             <tr>
               <td colspan="5" class="text-center text-slate-500 py-12">
-                لا توجد بيانات — ابدأ بجمع العملاء من Google Maps
+                No data — start collecting leads from Google Maps
               </td>
             </tr>
           </tbody>
@@ -250,11 +243,11 @@
     <!-- Activity Log -->
     <div class="glass rounded-2xl p-5">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold">سجل النشاط</h2>
-        <button onclick="clearLog()" class="text-xs text-slate-500 hover:text-slate-300">مسح</button>
+        <h2 class="text-base font-bold">Activity Log</h2>
+        <button onclick="clearLog()" class="text-xs text-slate-500 hover:text-slate-300">Clear</button>
       </div>
       <div id="log" class="h-52 overflow-y-auto space-y-1.5 text-xs font-mono">
-        <p class="text-slate-500">جاهز...</p>
+        <p class="text-slate-500">Ready...</p>
       </div>
     </div>
 
@@ -286,15 +279,15 @@ function handleWaEvent(data) {
     hideQR();
     stopQRPolling();
     setWaStatus('ready');
-    log('✅ واتساب جاهز للإرسال', 'green');
+    log('✅ WhatsApp ready to send', 'green');
   } else if (data.status === 'connecting' || data.status === 'authenticated') {
     setWaStatus('connecting');
   } else if (data.status === 'disconnected') {
     setWaStatus('disconnected');
-    log('🔌 واتساب: انقطع الاتصال', 'red');
+    log('🔌 WhatsApp disconnected', 'red');
   } else if (data.status === 'error') {
     setWaStatus('error');
-    log('❌ واتساب: ' + (data.message || 'خطأ'), 'red');
+    log('❌ WhatsApp error: ' + (data.message || 'unknown'), 'red');
   }
 }
 
@@ -302,19 +295,19 @@ function handleWaEvent(data) {
 function handleScraperEvent(data) {
   if (data.type === 'status')  log('🔍 ' + data.message, 'blue');
   if (data.type === 'lead')    log(`📍 ${data.message} (${data.count})`, 'white');
-  if (data.type === 'done')    { log('✅ ' + data.message, 'green'); document.getElementById('btn-scrape').disabled = false; document.getElementById('btn-scrape').textContent = '🔍 ابدأ الجمع'; }
-  if (data.type === 'saved')   log(`💾 تم حفظ ${data.added} عميل جديد`, 'purple');
-  if (data.type === 'error')   { log('❌ خطأ: ' + data.message, 'red'); document.getElementById('btn-scrape').disabled = false; document.getElementById('btn-scrape').textContent = '🔍 ابدأ الجمع'; }
+  if (data.type === 'done')    { log('✅ ' + data.message, 'green'); document.getElementById('btn-scrape').disabled = false; document.getElementById('btn-scrape').textContent = '🔍 Start Collecting'; }
+  if (data.type === 'saved')   log(`💾 Saved ${data.added} new lead(s)`, 'purple');
+  if (data.type === 'error')   { log('❌ Error: ' + data.message, 'red'); document.getElementById('btn-scrape').disabled = false; document.getElementById('btn-scrape').textContent = '🔍 Start Collecting'; }
 }
 
 // ─── Sender Events ────────────────────────────────────────────
 function handleSenderEvent(data) {
-  if (data.type === 'sending') log(`📤 إرسال (${data.index}/${data.total}): ${data.name}`, 'blue');
-  if (data.type === 'sent')    log(`✅ أُرسل لـ ${data.name} — ${data.phone}`, 'green');
-  if (data.type === 'failed')  log(`❌ فشل ${data.name}: ${data.reason}`, 'red');
-  if (data.type === 'waiting') log(`⏳ انتظار ${data.seconds} ثانية...`, 'gray');
-  if (data.type === 'done')    { log(`🏁 انتهى: ${data.sent} أُرسل، ${data.failed} فشل`, 'green'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 إرسال للكل المعلقين'; }
-  if (data.type === 'error')   { log('❌ خطأ إرسال: ' + data.message, 'red'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 إرسال للكل المعلقين'; }
+  if (data.type === 'sending') log(`📤 Sending (${data.index}/${data.total}): ${data.name}`, 'blue');
+  if (data.type === 'sent')    log(`✅ Sent to ${data.name} — ${data.phone}`, 'green');
+  if (data.type === 'failed')  log(`❌ Failed ${data.name}: ${data.reason}`, 'red');
+  if (data.type === 'waiting') log(`⏳ Waiting ${data.seconds}s...`, 'gray');
+  if (data.type === 'done')    { log(`🏁 Done: ${data.sent} sent, ${data.failed} failed`, 'green'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 Send to All Pending'; }
+  if (data.type === 'error')   { log('❌ Send error: ' + data.message, 'red'); document.getElementById('btn-send').disabled = false; document.getElementById('btn-send').textContent = '📤 Send to All Pending'; }
 }
 
 // ─── WA Status UI ─────────────────────────────────────────────
@@ -327,12 +320,12 @@ function setWaStatus(status) {
   const spinner       = document.getElementById('wa-spinner');
 
   const states = {
-    disconnected: { color: 'bg-slate-500', text: 'غير متوصل',    show: 'connect' },
-    connecting:   { color: 'bg-blue-400 animate-pulse', text: 'جاري الاتصال...', show: 'spinner' },
-    qr:           { color: 'bg-amber-400 animate-pulse', text: 'امسح الـ QR',   show: 'qr'      },
-    authenticated:{ color: 'bg-blue-400 animate-pulse', text: 'جاري التحقق...', show: 'spinner' },
-    ready:        { color: 'bg-green-400', text: 'متوصل ✓',      show: 'disconnect' },
-    error:        { color: 'bg-red-400',   text: 'خطأ',           show: 'connect' },
+    disconnected: { color: 'bg-slate-500',            text: 'Disconnected',    show: 'connect'     },
+    connecting:   { color: 'bg-blue-400 animate-pulse', text: 'Connecting...',  show: 'spinner'     },
+    qr:           { color: 'bg-amber-400 animate-pulse', text: 'Scan QR Code', show: 'qr'          },
+    authenticated:{ color: 'bg-blue-400 animate-pulse', text: 'Authenticating...', show: 'spinner' },
+    ready:        { color: 'bg-green-400',             text: 'Connected ✓',     show: 'disconnect'  },
+    error:        { color: 'bg-red-400',               text: 'Error',           show: 'connect'     },
   };
 
   const s = states[status] || states.disconnected;
@@ -347,7 +340,6 @@ function setWaStatus(status) {
 async function showQR(qr) {
   const section = document.getElementById('wa-qr-section');
   section.classList.remove('hidden');
-  // Use server-rendered QR image endpoint — avoids canvas/library issues
   document.getElementById('qr-img').src = '/api/whatsapp/qr-image?t=' + Date.now();
 }
 
@@ -379,7 +371,7 @@ function hideQR() {
 async function connectWA() {
   setWaStatus('connecting');
   await fetch('/api/whatsapp/connect', { method: 'POST' });
-  startQRPolling(); // Poll until QR appears or connected
+  startQRPolling();
 }
 
 async function disconnectWA() {
@@ -392,12 +384,12 @@ async function startScrape() {
   const city     = document.getElementById('inp-city').value.trim();
   const maxResults = document.getElementById('inp-max').value;
 
-  if (!category || !city) { alert('اكتب نوع البيزنس والمدينة'); return; }
+  if (!category || !city) { alert('Please enter a business type and city'); return; }
 
   const btn = document.getElementById('btn-scrape');
   btn.disabled = true;
-  btn.textContent = '⏳ جاري الجمع...';
-  log(`🚀 بدأ جمع: "${category}" في "${city}"`, 'blue');
+  btn.textContent = '⏳ Collecting...';
+  log(`🚀 Started: "${category}" in "${city}"`, 'blue');
 
   await fetch('/api/scrape', {
     method: 'POST',
@@ -407,22 +399,22 @@ async function startScrape() {
 }
 
 async function sendMessages() {
-  if (waStatus !== 'ready') { alert('وصّل واتساب الأول'); return; }
+  if (waStatus !== 'ready') { alert('Please connect WhatsApp first'); return; }
 
   const pending = allLeads.filter(l => l.status === 'pending');
-  if (pending.length === 0) { alert('مفيش عملاء معلقين للإرسال'); return; }
+  if (pending.length === 0) { alert('No pending leads to send to'); return; }
 
   const minDelay = parseInt(document.getElementById('inp-mindelay').value);
   const maxDelay = parseInt(document.getElementById('inp-maxdelay').value);
   const messageTemplate = document.getElementById('inp-message').value.trim();
 
-  if (!messageTemplate) { alert('اكتب نص الرسالة الأول'); return; }
+  if (!messageTemplate) { alert('Please enter a message first'); return; }
 
   const btn = document.getElementById('btn-send');
   btn.disabled = true;
-  btn.textContent = '⏳ جاري الإرسال...';
+  btn.textContent = '⏳ Sending...';
 
-  log(`🚀 بدأ الإرسال لـ ${pending.length} عميل`, 'purple');
+  log(`🚀 Sending to ${pending.length} pending lead(s)`, 'purple');
 
   await fetch('/api/whatsapp/send', {
     method: 'POST',
@@ -446,7 +438,7 @@ async function deleteLead(id) {
 }
 
 async function clearLeads() {
-  if (!confirm('هتمسح كل العملاء؟')) return;
+  if (!confirm('Delete all leads?')) return;
   await fetch('/api/leads', { method: 'DELETE' });
   loadLeads(); loadStats();
 }
@@ -476,12 +468,12 @@ function renderTable() {
   const tbody = document.getElementById('leads-tbody');
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-slate-500 py-12">لا توجد بيانات</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-slate-500 py-12">No data</td></tr>`;
     return;
   }
 
   const badgeClass = { pending: 'badge-pending', sent: 'badge-sent', failed: 'badge-failed', replied: 'badge-replied', not_on_whatsapp: 'badge-not_on_whatsapp' };
-  const badgeText  = { pending: 'معلق', sent: 'أُرسل', failed: 'فشل', replied: 'رد', not_on_whatsapp: 'مش على WA' };
+  const badgeText  = { pending: 'Pending', sent: 'Sent', failed: 'Failed', replied: 'Replied', not_on_whatsapp: 'Not on WA' };
 
   tbody.innerHTML = filtered.map(lead => `
     <tr class="border-b border-white/5 transition-colors">
@@ -493,8 +485,8 @@ function renderTable() {
       </td>
       <td class="py-2.5 px-3">
         <div class="flex gap-1">
-          ${lead.status !== 'replied' ? `<button onclick="markReplied('${lead.id}')" title="علّم كرد" class="text-purple-400 hover:text-purple-300 text-xs px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition">رد</button>` : ''}
-          <button onclick="deleteLead('${lead.id}')" title="حذف" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition">✕</button>
+          ${lead.status !== 'replied' ? `<button onclick="markReplied('${lead.id}')" title="Mark as replied" class="text-purple-400 hover:text-purple-300 text-xs px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition">Replied</button>` : ''}
+          <button onclick="deleteLead('${lead.id}')" title="Delete" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition">✕</button>
         </div>
       </td>
     </tr>
@@ -506,17 +498,16 @@ const colors = { green: 'text-green-400', red: 'text-red-400', blue: 'text-blue-
 
 function log(msg, color = 'white') {
   const div = document.getElementById('log');
-  const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const el = document.createElement('div');
   el.className = `log-entry ${colors[color] || 'text-slate-300'}`;
   el.textContent = `[${time}] ${msg}`;
   div.prepend(el);
-  // Keep max 200 entries
   while (div.children.length > 200) div.removeChild(div.lastChild);
 }
 
 function clearLog() {
-  document.getElementById('log').innerHTML = '<p class="text-slate-500">تم المسح</p>';
+  document.getElementById('log').innerHTML = '<p class="text-slate-500">Cleared</p>';
 }
 
 // ─── Init ─────────────────────────────────────────────────────
@@ -524,21 +515,19 @@ async function init() {
   loadLeads();
   loadStats();
 
-  // Check existing WA status
   const res = await fetch('/api/whatsapp/status');
   const { status, qr } = await res.json();
   setWaStatus(status || 'disconnected');
-  // If server already has a QR (e.g. after page refresh), show it immediately
   if (status === 'qr') {
     showQR(qr);
     startQRPolling();
   } else if (status === 'connecting' || status === 'authenticated') {
-    startQRPolling(); // Resume polling in case QR hasn't fired yet
+    startQRPolling();
   }
 }
 
 init();
-setInterval(() => { loadStats(); }, 10000); // refresh stats every 10s
+setInterval(() => { loadStats(); }, 10000);
 </script>
 </body>
 </html>

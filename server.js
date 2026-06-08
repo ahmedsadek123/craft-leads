@@ -72,9 +72,9 @@ app.delete('/api/leads', (req, res) => {
 // ── Scraper ───────────────────────────────────────────────────
 app.post('/api/scrape', async (req, res) => {
   const { category, city, maxResults } = req.body;
-  if (!category || !city) return res.status(400).json({ error: 'category و city مطلوبين' });
+  if (!category || !city) return res.status(400).json({ error: 'category and city are required' });
 
-  res.json({ ok: true, message: 'بدأ الـ scraping...' });
+  res.json({ ok: true, message: 'Scraping started...' });
 
   try {
     const leads = await scrapeGoogleMaps(
@@ -93,7 +93,7 @@ app.post('/api/scrape', async (req, res) => {
 // ── WhatsApp ──────────────────────────────────────────────────
 app.post('/api/whatsapp/connect', (req, res) => {
   initWhatsApp();
-  res.json({ ok: true, message: 'جاري التشغيل — انتظر الـ QR' });
+  res.json({ ok: true, message: 'Starting — wait for QR' });
 });
 
 app.post('/api/whatsapp/disconnect', async (req, res) => {
@@ -122,9 +122,9 @@ app.get('/api/whatsapp/qr-image', async (req, res) => {
 app.post('/api/whatsapp/send', async (req, res) => {
   const { leadIds, minDelay, maxDelay, messageTemplate } = req.body;
   const { status } = getStatus();
-  if (status !== 'ready') return res.status(400).json({ error: 'WhatsApp مش متوصل' });
+  if (status !== 'ready') return res.status(400).json({ error: 'WhatsApp not connected' });
 
-  res.json({ ok: true, message: 'بدأ الإرسال...' });
+  res.json({ ok: true, message: 'Sending started...' });
 
   sendBatch(
     { leadIds, minDelaySec: minDelay || 35, maxDelaySec: maxDelay || 65, messageTemplate },
