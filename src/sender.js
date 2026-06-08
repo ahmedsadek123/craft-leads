@@ -60,6 +60,7 @@ async function initWhatsApp() {
     puppeteer: {
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      protocolTimeout: 120000, // 2 min — Railway is slow, default 30s times out
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
