@@ -51,7 +51,6 @@ async function initWhatsApp() {
 
 
 
-  initializing = false;
   client = new Client({
     authStrategy,
     webVersionCache: {
@@ -76,6 +75,7 @@ async function initWhatsApp() {
       ],
     },
   });
+  initializing = false; // guard released after client is assigned
 
   client.on('qr', (qr) => {
     clientStatus = 'qr';

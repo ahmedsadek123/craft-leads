@@ -45,4 +45,4 @@ COPY . .
 RUN mkdir -p /app/data
 
 EXPOSE 3737
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

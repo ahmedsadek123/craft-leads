@@ -10,18 +10,20 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',   // use /tmp instead of /dev/shm (critical on Railway)
+      '--disable-dev-shm-usage',
       '--disable-gpu',
       '--disable-extensions',
       '--disable-plugins',
-      '--disable-images',           // skip loading images — huge memory saving
       '--blink-settings=imagesEnabled=false',
-      '--single-process',           // run renderer in browser process — saves ~150MB
-      '--no-zygote',
+      // --no-zygote needed on Linux/Docker; skip on Windows (causes crash)
+      ...(process.platform !== 'win32' ? ['--no-zygote'] : []),
     ],
   });
-  // en-US locale so Google Maps UI and selectors are consistent globally
-  const context = await browser.newContext({ locale: 'en-US' });
+  // en-US locale + real browser user agent to avoid Google blocking
+  const context = await browser.newContext({
+    locale: 'en-US',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  });
   const leads = [];
   const seenPhones = new Set();
 
@@ -30,7 +32,8 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
 
     // ── Step 1: Collect all place URLs from search results ────
     const searchPage = await context.newPage();
-    await searchPage.goto(searchUrl, { waitUntil: 'load', timeout: 60000 });
+    await searchPage.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await searchPage.waitForTimeout(2000);
 
     // Accept consent if shown (handles Arabic, English, EU dialogs)
     for (const txt of ['Accept all', 'قبول الكل', 'Agree', 'I agree']) {
@@ -85,59 +88,97 @@ async function scrapeGoogleMaps({ category, city, maxResults = 50 }, onProgress)
 
     // ── Step 2: Visit each place and extract data ─────────────
     const placePage = await context.newPage();
+    let skippedWebsite = 0, skippedNoPhone = 0, skippedNoName = 0;
 
     for (const url of urlList) {
       if (leads.length >= maxResults) break;
 
       try {
-        await placePage.goto(url, { waitUntil: 'load', timeout: 60000 });
-        await placePage.waitForTimeout(1500);
+        await placePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await placePage.waitForTimeout(2000);
 
-        // Business name
-        const name = (await placePage.locator('h1.DUwDvf, h1').first().textContent({ timeout: 5000 }).catch(() => '')).trim();
-        if (!name || name.length < 2) continue;
+        // Business name — try multiple selectors
+        let name = '';
+        for (const sel of ['h1.DUwDvf', 'h1.fontHeadlineLarge', 'h1']) {
+          name = (await placePage.locator(sel).first().textContent({ timeout: 3000 }).catch(() => '')).trim();
+          if (name && name.length >= 2) break;
+        }
+        if (!name || name.length < 2) { skippedNoName++; continue; }
 
-        // Skip only if they have a REAL website (not just Facebook/Instagram)
-        const websiteEl = placePage.locator('a[data-item-id="authority"]');
-        const websiteVisible = await websiteEl.isVisible({ timeout: 2000 }).catch(() => false);
-        if (websiteVisible) {
-          const href = (await websiteEl.getAttribute('href', { timeout: 1000 }).catch(() => '')) || '';
-          const isSocial = /facebook\.com|instagram\.com|fb\.com/i.test(href);
-          if (!isSocial) continue; // has a real website — skip
+        // Skip only if they have a REAL website (not Facebook/Instagram/TikTok)
+        // Try multiple selectors Google Maps uses for website links
+        let hasRealWebsite = false;
+        const websiteSelectors = [
+          'a[data-item-id="authority"]',
+          'a[aria-label*="website" i]',
+          'a[aria-label*="موقع" i]',
+          '[data-item-id="authority"] a',
+        ];
+        for (const sel of websiteSelectors) {
+          const el = placePage.locator(sel).first();
+          const visible = await el.isVisible({ timeout: 1500 }).catch(() => false);
+          if (visible) {
+            const href = (await el.getAttribute('href', { timeout: 1000 }).catch(() => '')) || '';
+            const isSocial = /facebook\.com|instagram\.com|fb\.com|tiktok\.com|twitter\.com|x\.com/i.test(href);
+            if (!isSocial && href.startsWith('http')) { hasRealWebsite = true; break; }
+          }
+        }
+        if (hasRealWebsite) { skippedWebsite++; continue; }
+
+        // Phone — try multiple selectors and fallbacks
+        let phoneLabel = null;
+
+        // 1. data-item-id containing "phone"
+        const phoneByDataId = placePage.locator('[data-item-id*="phone"]').first();
+        phoneLabel = await phoneByDataId.getAttribute('aria-label', { timeout: 3000 }).catch(() => null)
+          || await phoneByDataId.textContent({ timeout: 3000 }).catch(() => null);
+
+        // 2. aria-label containing phone/هاتف
+        if (!phoneLabel) {
+          const phoneByAriaPhone = placePage.locator('[aria-label*="Phone" i], [aria-label*="هاتف"], [aria-label*="phone" i]').first();
+          phoneLabel = await phoneByAriaPhone.getAttribute('aria-label', { timeout: 2000 }).catch(() => null)
+            || await phoneByAriaPhone.textContent({ timeout: 2000 }).catch(() => null);
         }
 
-        // Phone
-        const phoneEl = placePage.locator('[data-item-id*="phone"]').first();
-        const phoneLabel = await phoneEl.getAttribute('aria-label', { timeout: 3000 }).catch(() => null)
-          || await phoneEl.textContent({ timeout: 3000 }).catch(() => null);
+        // 3. Scan page text for Egyptian/international phone pattern
+        if (!phoneLabel) {
+          phoneLabel = await placePage.evaluate(() => {
+            const text = document.body.innerText;
+            const match = text.match(/(\+?2?01[0-9]{9}|\+?[0-9]{7,15})/);
+            return match ? match[0] : null;
+          }).catch(() => null);
+        }
 
-        if (!phoneLabel) continue;
+        if (!phoneLabel) { skippedNoPhone++; onProgress?.({ type: 'status', message: `⚠️ ${name} - لا يوجد هاتف` }); continue; }
 
         // Extract digits + keep leading + for international format
-        const digitsRaw = phoneLabel.replace(/[^\d+]/g, '');
+        const digitsRaw = (phoneLabel + '').replace(/[^\d+]/g, '');
         const digitOnly = digitsRaw.replace('+', '');
-        if (digitOnly.length < 7) continue; // too short to be real
+        if (digitOnly.length < 7) { skippedNoPhone++; continue; }
 
         const phone = digitsRaw.startsWith('+') ? digitsRaw : '+' + digitsRaw;
         if (seenPhones.has(phone)) continue;
 
         // Category
-        const typeEl = placePage.locator('button.DkEaL, [jsaction*="category"]').first();
+        const typeEl = placePage.locator('button.DkEaL, [jsaction*="category"], .fontBodyMedium button').first();
         const type = (await typeEl.textContent({ timeout: 2000 }).catch(() => category)).trim() || category;
 
-        // Address — handles both Arabic ("العنوان:") and English ("Address:") prefixes
-        const addrEl = placePage.locator('[data-item-id="address"]').first();
-        const addrLabel = await addrEl.getAttribute('aria-label', { timeout: 2000 }).catch(() => '');
-        const address = addrLabel.replace(/^(العنوان|Address):\s*/i, '').trim();
+        // Address
+        const addrEl = placePage.locator('[data-item-id="address"], [aria-label*="Address" i], [aria-label*="العنوان"]').first();
+        const addrLabel = await addrEl.getAttribute('aria-label', { timeout: 2000 }).catch(() => '')
+          || await addrEl.textContent({ timeout: 2000 }).catch(() => '');
+        const address = (addrLabel + '').replace(/^(العنوان|Address):\s*/i, '').trim();
 
         seenPhones.add(phone);
         leads.push({ name, phone, type, address, mapsUrl: url });
         onProgress?.({ type: 'lead', message: `✅ ${name} | ${phone}`, count: leads.length });
 
-      } catch (_) {
-        // Skip this place
+      } catch (err) {
+        onProgress?.({ type: 'status', message: `⚠️ خطأ: ${err.message?.slice(0, 60)}` });
       }
     }
+
+    onProgress?.({ type: 'status', message: `ملخص: ${leads.length} عميل ✅ | ${skippedWebsite} لديهم موقع | ${skippedNoPhone} بدون هاتف | ${skippedNoName} بدون اسم` });
 
     await placePage.close();
 

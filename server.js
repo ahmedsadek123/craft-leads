@@ -139,4 +139,10 @@ app.post('/api/whatsapp/send', async (req, res) => {
 const PORT = process.env.PORT || 3737;
 app.listen(PORT, () => {
   console.log(`\n🚀 Craft Leads Dashboard: http://localhost:${PORT}\n`);
+
+  // Auto-reconnect WhatsApp on server boot when MongoDB session is available
+  if (process.env.MONGODB_URI) {
+    console.log('🔄 Auto-connecting WhatsApp (MongoDB session detected)...');
+    initWhatsApp();
+  }
 });
