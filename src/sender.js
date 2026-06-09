@@ -139,11 +139,21 @@ async function initWhatsApp() {
 
 async function disconnectWhatsApp() {
   if (client) {
-    await client.destroy();
+    try { await client.logout(); } catch (_) {}
+    try { await client.destroy(); } catch (_) {}
     client = null;
-    clientStatus = 'disconnected';
-    emit({ type: 'status', status: 'disconnected' });
   }
+  initializing = false;
+  clientStatus = 'disconnected';
+  emit({ type: 'status', status: 'disconnected' });
+}
+
+function clearSession() {
+  const fs = require('fs');
+  const sessionPath = require('path').join(__dirname, '../data/whatsapp-session');
+  const cachePath = require('path').join(__dirname, '../.wwebjs_cache');
+  try { fs.rmSync(sessionPath, { recursive: true, force: true }); } catch (_) {}
+  try { fs.rmSync(cachePath, { recursive: true, force: true }); } catch (_) {}
 }
 
 // Random delay between min and max seconds
@@ -237,4 +247,4 @@ async function sendBatch({ leadIds, minDelaySec = 30, maxDelaySec = 60, messageT
   return { sent, failed };
 }
 
-module.exports = { initWhatsApp, disconnectWhatsApp, sendBatch, getStatus, onStatusChange };
+module.exports = { initWhatsApp, disconnectWhatsApp, clearSession, sendBatch, getStatus, onStatusChange };

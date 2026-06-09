@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const QRCode = require('qrcode');
 const { scrapeGoogleMaps } = require('./src/scraper');
-const { initWhatsApp, disconnectWhatsApp, sendBatch, getStatus, onStatusChange } = require('./src/sender');
+const { initWhatsApp, disconnectWhatsApp, clearSession, sendBatch, getStatus, onStatusChange } = require('./src/sender');
 const db = require('./src/db');
 
 // Prevent unhandled errors from crashing the server
@@ -98,6 +98,7 @@ app.post('/api/whatsapp/connect', (req, res) => {
 
 app.post('/api/whatsapp/disconnect', async (req, res) => {
   await disconnectWhatsApp();
+  clearSession();
   res.json({ ok: true });
 });
 
