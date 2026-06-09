@@ -10,6 +10,7 @@ let initializing = false; // guard against race condition
 let clientStatus = 'disconnected'; // disconnected | qr | ready | error
 let qrData = null;
 let statusListeners = [];
+let manualDisconnect = false; // blocks auto-reconnect when user presses Disconnect
 
 function onStatusChange(fn) {
   statusListeners.push(fn);
@@ -35,6 +36,7 @@ async function buildAuthStrategy() {
 }
 
 async function initWhatsApp() {
+  manualDisconnect = false; // reset flag — this is a deliberate connect
   if (client || initializing) return;
   initializing = true;
 
@@ -103,8 +105,8 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'disconnected' });
-    // Auto-reconnect when MongoDB session exists — no manual QR needed
-    if (process.env.MONGODB_URI) {
+    // Auto-reconnect only if it wasn't a manual disconnect
+    if (process.env.MONGODB_URI && !manualDisconnect) {
       console.log('🔄 WhatsApp disconnected — reconnecting in 10s...');
       setTimeout(() => initWhatsApp(), 10000);
     }
@@ -115,8 +117,7 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'error', message: 'Auth failed — scan QR again' });
-    // Auth failure usually means session expired — reconnect to get a fresh QR
-    if (process.env.MONGODB_URI) {
+    if (process.env.MONGODB_URI && !manualDisconnect) {
       console.log('🔄 Auth failure — reconnecting in 15s...');
       setTimeout(() => initWhatsApp(), 15000);
     }
@@ -129,8 +130,7 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'error', message: err.message });
-    // Retry initialization after a crash
-    if (process.env.MONGODB_URI) {
+    if (process.env.MONGODB_URI && !manualDisconnect) {
       console.log('🔄 Init error — retrying in 20s...');
       setTimeout(() => initWhatsApp(), 20000);
     }
@@ -138,10 +138,19 @@ async function initWhatsApp() {
 }
 
 async function disconnectWhatsApp() {
+  manualDisconnect = true; // block auto-reconnect
   if (client) {
     try { await client.logout(); } catch (_) {}
     try { await client.destroy(); } catch (_) {}
     client = null;
+  }
+  // Clear MongoDB session so next connect shows fresh QR
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const db = mongoose.connection.db;
+      await db.collection('whatsapp-RemoteAuth-default').drop();
+      console.log('🗑️ MongoDB WA session cleared');
+    } catch (_) {} // collection may not exist — that's fine
   }
   initializing = false;
   clientStatus = 'disconnected';
