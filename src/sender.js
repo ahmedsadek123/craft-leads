@@ -103,6 +103,11 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'disconnected' });
+    // Auto-reconnect when MongoDB session exists — no manual QR needed
+    if (process.env.MONGODB_URI) {
+      console.log('🔄 WhatsApp disconnected — reconnecting in 10s...');
+      setTimeout(() => initWhatsApp(), 10000);
+    }
   });
 
   client.on('auth_failure', () => {
@@ -110,6 +115,11 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'error', message: 'Auth failed — scan QR again' });
+    // Auth failure usually means session expired — reconnect to get a fresh QR
+    if (process.env.MONGODB_URI) {
+      console.log('🔄 Auth failure — reconnecting in 15s...');
+      setTimeout(() => initWhatsApp(), 15000);
+    }
   });
 
   // Fire and forget — don't await, SSE handles all status updates
@@ -119,6 +129,11 @@ async function initWhatsApp() {
     client = null;
     initializing = false;
     emit({ type: 'status', status: 'error', message: err.message });
+    // Retry initialization after a crash
+    if (process.env.MONGODB_URI) {
+      console.log('🔄 Init error — retrying in 20s...');
+      setTimeout(() => initWhatsApp(), 20000);
+    }
   });
 }
 
